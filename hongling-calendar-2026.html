@@ -447,32 +447,10 @@
     return x;
   }
 
-  var fangjiaRanges2026 = [
-    { start: ymd(2026, 1, 1), end: ymd(2026, 1, 3), name: "元旦放假" },
-    { start: ymd(2026, 2, 15), end: ymd(2026, 2, 23), name: "春节放假" },
-    { start: ymd(2026, 4, 4), end: ymd(2026, 4, 6), name: "清明放假" },
-    { start: ymd(2026, 5, 1), end: ymd(2026, 5, 3), name: "劳动节放假" },
-    { start: ymd(2026, 6, 19), end: ymd(2026, 6, 19), name: "端午放假" },
-    { start: ymd(2026, 9, 25), end: ymd(2026, 9, 25), name: "中秋放假" },
-    { start: ymd(2026, 10, 1), end: ymd(2026, 10, 4), name: "国庆放假" },
-  ];
-
-  /** 2027 年 1—4 月：国务院未发布时参考常见公历推算，正式放假以公布为准 */
-  var fangjiaRanges2027Partial = [
-    { start: ymd(2027, 1, 1), end: ymd(2027, 1, 3), name: "元旦放假" },
-    { start: ymd(2027, 2, 5), end: ymd(2027, 2, 8), name: "春节放假" },
-    { start: ymd(2027, 4, 5), end: ymd(2027, 4, 5), name: "清明放假" },
-  ];
-
   var DEFAULT_CONTRACT = ymd(2026, 4, 20);
 
   var rangeStart;
   var rangeEnd;
-  var fangjiaNames;
-
-  function inRange(date) {
-    return date >= rangeStart && date <= rangeEnd;
-  }
 
   function parseYmdString(s) {
     if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) {
@@ -490,24 +468,6 @@
   function setRangeFromContract(contractDate) {
     rangeStart = new Date(contractDate.getFullYear(), contractDate.getMonth(), contractDate.getDate());
     rangeEnd = addDays(rangeStart, 364);
-  }
-
-  function registerFangjia(start, end, name) {
-    for (var d = new Date(start); d <= end; d = addDays(d, 1)) {
-      if (!inRange(d)) continue;
-      fangjiaNames.set(fmt(d), name);
-    }
-  }
-
-  function rebuildFangjiaMap() {
-    fangjiaNames = new Map();
-    fangjiaRanges2026.concat(fangjiaRanges2027Partial).forEach(function (r) {
-      registerFangjia(r.start, r.end, r.name);
-    });
-  }
-
-  function isFangjia(date) {
-    return fangjiaNames.has(fmt(date));
   }
 
   var statutoryKeys = [
@@ -630,7 +590,7 @@
     }
 
     function isRest(date) {
-      return isFangjia(date) || isWeeklyRest(date) || extraRest.has(fmt(date));
+      return isStatutory(date) || isWeeklyRest(date) || extraRest.has(fmt(date));
     }
 
     monthsEl.innerHTML = "";
@@ -773,7 +733,6 @@
   }
 
   setRangeFromContract(loadContractDate());
-  rebuildFangjiaMap();
   weeklyRestDay = loadWeeklyRestDay();
 
   syncContractInput();
@@ -827,7 +786,6 @@
     }
     localStorage.setItem(STORAGE_CONTRACT, this.value);
     setRangeFromContract(d);
-    rebuildFangjiaMap();
     applySubLine();
     updateDocumentTitle();
     render();
