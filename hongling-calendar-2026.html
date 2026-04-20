@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>李姐 · 育儿休息日历（2026年4月20日—2027年4月19日）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f7f5;
+      --card: #ffffff;
+      --text: #2a2826;
+      --muted: #6b6560;
+      --border: #e2ded8;
+      --rest: #c8e6d0;
+      --rest-border: #7cb88c;
+      --today: #1a6b4a;
+      --shadow: 0 4px 20px rgba(42, 40, 38, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      max-width: min(1480px, 95vw);
+      margin: 0 auto;
+      padding: 0.45rem 1rem 0.6rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0.35rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      font-weight: 700;
+      margin: 0 0 0.15rem;
+    }
+
+    header h1 .editable-name {
+      display: inline-block;
+      min-width: 2.5em;
+      max-width: 12em;
+      padding: 0 0.1rem 0.05rem;
+      margin: 0 -0.1rem;
+      border-radius: 4px;
+      outline: none;
+      cursor: text;
+      vertical-align: baseline;
+    }
+
+    header h1 .editable-name:hover {
+      background: rgba(26, 107, 74, 0.06);
+    }
+
+    header h1 .editable-name:focus {
+      background: rgba(26, 107, 74, 0.1);
+      box-shadow: 0 0 0 2px rgba(26, 107, 74, 0.25);
+    }
+
+    header h1 .title-rest {
+      font-weight: 700;
+    }
+
+    header .sub {
+      color: var(--muted);
+      font-size: 0.78rem;
+      max-width: 56rem;
+      margin: 0 auto;
+      line-height: 1.35;
+    }
+
+    .rule-notes {
+      background: var(--card);
+      border-radius: 8px;
+      padding: 0.4rem 0.55rem;
+      margin-bottom: 0.4rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      font-size: 0.76rem;
+      line-height: 1.42;
+      color: var(--text);
+    }
+
+    .rule-notes p {
+      margin: 0 0 0.38rem;
+    }
+
+    .rule-notes p:last-child {
+      margin-bottom: 0;
+    }
+
+    .months {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 0.5rem;
+      align-items: start;
+    }
+
+    .month-block {
+      background: var(--card);
+      border-radius: 6px;
+      padding: 0.4rem 0.36rem 0.46rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      break-inside: avoid;
+      page-break-inside: avoid;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .month-block h3 {
+      margin: 0 0 0.28rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .dow {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      margin-bottom: 2px;
+      font-size: 0.58rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 2px;
+      width: 100%;
+    }
+
+    .cell {
+      min-width: 0;
+      min-height: 1.62rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 1px;
+      background: #fdfcfb;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell.empty {
+      visibility: hidden;
+      pointer-events: none;
+      min-height: 1.62rem;
+    }
+
+    .cell.rest {
+      background: var(--rest);
+      border-color: var(--rest-border);
+    }
+
+    .cell .num {
+      font-weight: 600;
+      font-size: clamp(0.62rem, 0.95vw, 0.74rem);
+      line-height: 1;
+    }
+
+    .cell .tag {
+      font-size: clamp(0.48rem, 0.75vw, 0.56rem);
+      font-weight: 600;
+      margin-top: 1px;
+      line-height: 1.1;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      color: #2d4a33;
+    }
+
+    .cell.today {
+      outline: 2px solid var(--today);
+      outline-offset: -1px;
+    }
+
+    .page-settings {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 0.65rem 1.1rem;
+      margin: 0.4rem auto 0.45rem;
+      padding: 0.45rem 0.65rem;
+      max-width: 52rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .page-settings .settings-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.22rem;
+      min-width: 0;
+    }
+
+    .page-settings .settings-item > label,
+    .page-settings fieldset.settings-item > legend {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .page-settings input[type="date"] {
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 0.32rem 0.45rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      min-width: 7.5rem;
+      max-width: 100%;
+    }
+
+    .page-settings .week-toolbar-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.22rem;
+    }
+
+    .page-settings .week-toggle {
+      display: inline-flex;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: #f0eeeb;
+    }
+
+    .page-settings .week-toggle button {
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 0.32rem 0.85rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .page-settings .week-toggle button:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .page-settings .week-toggle button[aria-pressed="true"] {
+      background: var(--rest);
+      color: #1a4d2e;
+      font-weight: 600;
+    }
+
+    /* 大屏 5×3（13 个月为 5+5+3）；较窄为 4 列再逐级减少 */
+    @media (max-width: 1100px) {
+      .months {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .months {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .months {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .wrap {
+        padding-left: 0.55rem;
+        padding-right: 0.55rem;
+      }
+
+      .months {
+        grid-template-columns: 1fr;
+      }
+
+      .cell,
+      .cell.empty {
+        min-height: 1.85rem;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
+
+      .page-settings {
+        display: none;
+      }
+
+      body {
+        background: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .wrap {
+        max-width: none;
+        padding: 0;
+      }
+
+      .months {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+      }
+
+      .month-block {
+        padding: 4px 6px 6px;
+        box-shadow: none;
+      }
+
+      .month-block h3 {
+        font-size: 9pt;
+        margin-bottom: 4px;
+      }
+
+      .cell {
+        border-radius: 4px;
+        padding: 1px;
+      }
+
+      .cell .num {
+        font-size: 8pt;
+      }
+
+      .cell .tag {
+        font-size: 6pt;
+      }
+
+      .dow {
+        font-size: 6pt;
+      }
+
+      .rule-notes {
+        font-size: 7pt;
+        padding: 5px 8px;
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-header">
+      <h1 class="title-line" id="page-title">
+        <span
+          id="editable-name"
+          class="editable-name"
+          contenteditable="true"
+          spellcheck="false"
+          role="textbox"
+          aria-label="育儿嫂姓名"
+        >李姐</span><span class="title-rest"> · 育儿休息日历</span>
+      </h1>
+      <p class="sub" id="sub-main">2026年4月20日 — 2027年4月19日</p>
+      <div class="page-settings" id="page-settings">
+        <div class="settings-item">
+          <label for="opt-contract">合同开始日期</label>
+          <input type="date" id="opt-contract" name="contractStart" />
+        </div>
+        <div class="settings-item">
+          <span class="week-toolbar-label">每周固定休息</span>
+          <div class="week-toggle" role="group" aria-label="每周固定休息">
+            <button type="button" class="week-btn" id="week-sun" aria-pressed="true">周日</button>
+            <button type="button" class="week-btn" id="week-sat" aria-pressed="false">周六</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="rule-notes" aria-label="法定与补休说明">
+      <p>
+        <strong>「法定」</strong>：法定节假日共 13 天/年——元旦 1 天、春节 4 天（除夕至初三）、清明 1 天、劳动节 2 天、端午 1 天、中秋 1 天、国庆 3 天；与国务院公布的连休「放假」天数不同。
+      </p>
+      <p id="rule-compensatory"></p>
+    </section>
+
+    <div id="months" class="months"></div>
+  </div>
+
+  <script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "hongling-weekly-rest";
+  var STORAGE_NAME = "hongling-nanny-name";
+  var STORAGE_CONTRACT = "hongling-contract-start";
+  var DEFAULT_NANNY_NAME = "李姐";
+
+  function ymd(y, m, d) {
+    return new Date(y, m - 1, d);
+  }
+
+  function pad(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
+
+  function fmt(date) {
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+  }
+
+  function addDays(date, n) {
+    var x = new Date(date.getTime());
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  var fangjiaRanges2026 = [
+    { start: ymd(2026, 1, 1), end: ymd(2026, 1, 3), name: "元旦放假" },
+    { start: ymd(2026, 2, 15), end: ymd(2026, 2, 23), name: "春节放假" },
+    { start: ymd(2026, 4, 4), end: ymd(2026, 4, 6), name: "清明放假" },
+    { start: ymd(2026, 5, 1), end: ymd(2026, 5, 3), name: "劳动节放假" },
+    { start: ymd(2026, 6, 19), end: ymd(2026, 6, 19), name: "端午放假" },
+    { start: ymd(2026, 9, 25), end: ymd(2026, 9, 25), name: "中秋放假" },
+    { start: ymd(2026, 10, 1), end: ymd(2026, 10, 4), name: "国庆放假" },
+  ];
+
+  /** 2027 年 1—4 月：国务院未发布时参考常见公历推算，正式放假以公布为准 */
+  var fangjiaRanges2027Partial = [
+    { start: ymd(2027, 1, 1), end: ymd(2027, 1, 3), name: "元旦放假" },
+    { start: ymd(2027, 2, 5), end: ymd(2027, 2, 8), name: "春节放假" },
+    { start: ymd(2027, 4, 5), end: ymd(2027, 4, 5), name: "清明放假" },
+  ];
+
+  var DEFAULT_CONTRACT = ymd(2026, 4, 20);
+
+  var rangeStart;
+  var rangeEnd;
+  var fangjiaNames;
+
+  function inRange(date) {
+    return date >= rangeStart && date <= rangeEnd;
+  }
+
+  function parseYmdString(s) {
+    if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return null;
+    }
+    var p = s.split("-");
+    return ymd(parseInt(p[0], 10), parseInt(p[1], 10), parseInt(p[2], 10));
+  }
+
+  function loadContractDate() {
+    var d = parseYmdString(localStorage.getItem(STORAGE_CONTRACT));
+    return d || DEFAULT_CONTRACT;
+  }
+
+  function setRangeFromContract(contractDate) {
+    rangeStart = new Date(contractDate.getFullYear(), contractDate.getMonth(), contractDate.getDate());
+    rangeEnd = addDays(rangeStart, 364);
+  }
+
+  function registerFangjia(start, end, name) {
+    for (var d = new Date(start); d <= end; d = addDays(d, 1)) {
+      if (!inRange(d)) continue;
+      fangjiaNames.set(fmt(d), name);
+    }
+  }
+
+  function rebuildFangjiaMap() {
+    fangjiaNames = new Map();
+    fangjiaRanges2026.concat(fangjiaRanges2027Partial).forEach(function (r) {
+      registerFangjia(r.start, r.end, r.name);
+    });
+  }
+
+  function isFangjia(date) {
+    return fangjiaNames.has(fmt(date));
+  }
+
+  var statutoryKeys = [
+    "2026-05-01",
+    "2026-05-02",
+    "2026-06-19",
+    "2026-09-25",
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-03",
+    "2027-01-01",
+    "2027-02-05",
+    "2027-02-06",
+    "2027-02-07",
+    "2027-02-08",
+    "2027-04-05",
+  ];
+
+  var statutoryLabels = {
+    "2026-05-01": "劳动节（法定）",
+    "2026-05-02": "劳动节（法定）",
+    "2026-06-19": "端午节（法定）",
+    "2026-09-25": "中秋节（法定）",
+    "2026-10-01": "国庆节（法定）",
+    "2026-10-02": "国庆节（法定）",
+    "2026-10-03": "国庆节（法定）",
+    "2027-01-01": "元旦（法定）",
+    "2027-02-05": "春节（法定）",
+    "2027-02-06": "春节（法定）",
+    "2027-02-07": "春节（法定）",
+    "2027-02-08": "春节（法定）",
+    "2027-04-05": "清明节（法定）",
+  };
+
+  var statutorySet = new Set(statutoryKeys);
+
+  function isStatutory(date) {
+    return statutorySet.has(fmt(date));
+  }
+
+  var weeklyRestDay = 0;
+
+  function loadWeeklyRestDay() {
+    var s = localStorage.getItem(STORAGE_KEY);
+    if (s === "0" || s === "6") {
+      return parseInt(s, 10);
+    }
+    return 0;
+  }
+
+  function weeklyRestLabel() {
+    return weeklyRestDay === 0 ? "周日" : "周六";
+  }
+
+  function isWeeklyRest(date) {
+    return date.getDay() === weeklyRestDay;
+  }
+
+  function compensatoryDay(overlap) {
+    var c = addDays(overlap, 1);
+    while (isStatutory(c) || isWeeklyRest(c)) {
+      c = addDays(c, 1);
+    }
+    return c;
+  }
+
+  var today = new Date();
+  var todayStr = fmt(today);
+
+  var monthLabels = [
+    "一月", "二月", "三月", "四月", "五月", "六月",
+    "七月", "八月", "九月", "十月", "十一月", "十二月",
+  ];
+
+  var dowLabels = ["日", "一", "二", "三", "四", "五", "六"];
+
+  var monthsEl = document.getElementById("months");
+
+  function lastDayOfMonth(y, m) {
+    var next = m === 12 ? ymd(y + 1, 1, 1) : ymd(y, m + 1, 1);
+    return addDays(next, -1).getDate();
+  }
+
+  function buildMonthSpecs() {
+    var list = [];
+    var rs = rangeStart;
+    var re = rangeEnd;
+    var y = rs.getFullYear();
+    var m = rs.getMonth() + 1;
+    var rsY = rs.getFullYear();
+    var rsM = rs.getMonth() + 1;
+    var rsD = rs.getDate();
+    var reY = re.getFullYear();
+    var reM = re.getMonth() + 1;
+    var reD = re.getDate();
+    while (y < reY || (y === reY && m <= reM)) {
+      var startDay = y === rsY && m === rsM ? rsD : 1;
+      var last = lastDayOfMonth(y, m);
+      var endDay = y === reY && m === reM ? reD : last;
+      list.push({ y: y, m: m, start: startDay, end: endDay });
+      m++;
+      if (m > 12) {
+        m = 1;
+        y++;
+      }
+    }
+    return list;
+  }
+
+  function render() {
+    var extraRest = new Set();
+
+    for (var d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 1)) {
+      if (isStatutory(d) && isWeeklyRest(d)) {
+        var comp = compensatoryDay(d);
+        if (comp <= rangeEnd) {
+          extraRest.add(fmt(comp));
+        }
+      }
+    }
+
+    function isRest(date) {
+      return isFangjia(date) || isWeeklyRest(date) || extraRest.has(fmt(date));
+    }
+
+    monthsEl.innerHTML = "";
+
+    buildMonthSpecs().forEach(function (spec) {
+      var year = spec.y;
+      var month = spec.m;
+      var startDay = spec.start;
+      var endDay = spec.end;
+
+      var firstShown = ymd(year, month, startDay);
+      var lead = firstShown.getDay();
+
+      var block = document.createElement("section");
+      block.className = "month-block";
+      var h3 = document.createElement("h3");
+      h3.textContent = year + "年" + monthLabels[month - 1];
+      block.appendChild(h3);
+
+      var dow = document.createElement("div");
+      dow.className = "dow";
+      dowLabels.forEach(function (t) {
+        var c = document.createElement("div");
+        c.textContent = t;
+        dow.appendChild(c);
+      });
+      block.appendChild(dow);
+
+      var grid = document.createElement("div");
+      grid.className = "grid";
+
+      for (var i = 0; i < lead; i++) {
+        var e = document.createElement("div");
+        e.className = "cell empty";
+        grid.appendChild(e);
+      }
+
+      for (var day = startDay; day <= endDay; day++) {
+        var date = ymd(year, month, day);
+        if (date < rangeStart || date > rangeEnd) {
+          continue;
+        }
+        var key = fmt(date);
+        var rest = isRest(date);
+        var stat = isStatutory(date);
+        var extra = extraRest.has(key);
+
+        var cell = document.createElement("div");
+        cell.className = "cell";
+        if (rest) cell.classList.add("rest");
+
+        if (key === todayStr) cell.classList.add("today");
+
+        var num = document.createElement("span");
+        num.className = "num";
+        num.textContent = String(day);
+        cell.appendChild(num);
+
+        var tag = document.createElement("span");
+        tag.className = "tag";
+        var bits = [];
+        if (stat) bits.push(statutoryLabels[key] || "节日（法定）");
+        if (extra) bits.push("补休");
+        if (!stat && !extra && isWeeklyRest(date) && rest) {
+          bits.push(weeklyRestLabel());
+        }
+        tag.textContent = bits.join(" ");
+        cell.appendChild(tag);
+
+        grid.appendChild(cell);
+      }
+
+      block.appendChild(grid);
+      monthsEl.appendChild(block);
+    });
+
+    var wn = weeklyRestLabel();
+
+    document.getElementById("rule-compensatory").innerHTML =
+      "<strong>补休（向后顺延）</strong>：若某一天<strong>同时</strong>为「法定节假日当日」且「固定休息日」（您选择的「<strong>" +
+      wn +
+      "</strong>」），则<strong>顺延至之后</strong>第一个既非法定节假日当日、也不是固定休息日的日期<strong>多休 1 天</strong>（格内标「补休」）。";
+  }
+
+  function fmtChineseDate(d) {
+    return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  }
+
+  function updateDocumentTitle() {
+    var rawName = localStorage.getItem(STORAGE_NAME);
+    var name = rawName === null || rawName === "" ? DEFAULT_NANNY_NAME : rawName.trim();
+    if (!name) name = DEFAULT_NANNY_NAME;
+    document.title =
+      name + " · 育儿休息日历（" + fmtChineseDate(rangeStart) + "—" + fmtChineseDate(rangeEnd) + "）";
+  }
+
+  function applySubLine() {
+    document.getElementById("sub-main").textContent =
+      fmtChineseDate(rangeStart) + " — " + fmtChineseDate(rangeEnd);
+  }
+
+  function applyHeader() {
+    var rawName = localStorage.getItem(STORAGE_NAME);
+    var name = rawName === null ? DEFAULT_NANNY_NAME : rawName.trim();
+    if (!name) {
+      name = DEFAULT_NANNY_NAME;
+    }
+    var el = document.getElementById("editable-name");
+    if (el && document.activeElement !== el) {
+      el.textContent = name;
+    }
+    updateDocumentTitle();
+  }
+
+  function syncContractInput() {
+    var d = loadContractDate();
+    var stored = localStorage.getItem(STORAGE_CONTRACT);
+    var input = document.getElementById("opt-contract");
+    if (stored && parseYmdString(stored)) {
+      input.value = stored;
+    } else {
+      input.value = fmt(d);
+    }
+  }
+
+  function syncWeekToggle() {
+    var w = weeklyRestDay;
+    document.getElementById("week-sun").setAttribute("aria-pressed", w === 0 ? "true" : "false");
+    document.getElementById("week-sat").setAttribute("aria-pressed", w === 6 ? "true" : "false");
+  }
+
+  function setWeeklyRest(w) {
+    if (w !== 0 && w !== 6) {
+      w = 0;
+    }
+    weeklyRestDay = w;
+    localStorage.setItem(STORAGE_KEY, String(w));
+    syncWeekToggle();
+    render();
+  }
+
+  setRangeFromContract(loadContractDate());
+  rebuildFangjiaMap();
+  weeklyRestDay = loadWeeklyRestDay();
+
+  syncContractInput();
+  syncWeekToggle();
+
+  var nameEl = document.getElementById("editable-name");
+
+  nameEl.addEventListener("input", function () {
+    var t = this.textContent.replace(/\r?\n/g, "").replace(/\s+/g, " ");
+    if (t.length > 24) {
+      t = t.slice(0, 24);
+    }
+    if (this.textContent !== t) {
+      this.textContent = t;
+    }
+    localStorage.setItem(STORAGE_NAME, t);
+    updateDocumentTitle();
+  });
+
+  nameEl.addEventListener("blur", function () {
+    var t = this.textContent.trim();
+    if (!t) {
+      t = DEFAULT_NANNY_NAME;
+    }
+    this.textContent = t;
+    localStorage.setItem(STORAGE_NAME, t);
+    applyHeader();
+  });
+
+  nameEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      this.blur();
+    }
+  });
+
+  nameEl.addEventListener("paste", function (e) {
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/[\r\n]+/g, "");
+    if (text.length > 24) {
+      text = text.slice(0, 24);
+    }
+    document.execCommand("insertText", false, text);
+  });
+
+  document.getElementById("opt-contract").addEventListener("change", function () {
+    var d = parseYmdString(this.value);
+    if (!d) {
+      d = DEFAULT_CONTRACT;
+      this.value = fmt(d);
+    }
+    localStorage.setItem(STORAGE_CONTRACT, this.value);
+    setRangeFromContract(d);
+    rebuildFangjiaMap();
+    applySubLine();
+    updateDocumentTitle();
+    render();
+  });
+
+  document.getElementById("week-sun").addEventListener("click", function () {
+    setWeeklyRest(0);
+  });
+
+  document.getElementById("week-sat").addEventListener("click", function () {
+    setWeeklyRest(6);
+  });
+
+  applyHeader();
+  applySubLine();
+  render();
+})();
+  </script>
+</body>
+</html>
