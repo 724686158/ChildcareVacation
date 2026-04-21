@@ -18,6 +18,9 @@
       --rest-border: #7cb88c;
       --today: #1a6b4a;
       --shadow: 0 4px 20px rgba(42, 40, 38, 0.06);
+      --tiao-rest: #d0e4f0;
+      --tiao-rest-border: #7ba8c8;
+      --tiao-work-tag: #a07818;
     }
 
     * {
@@ -180,6 +183,11 @@
       border-color: var(--rest-border);
     }
 
+    .cell.tiao-rest {
+      background: var(--tiao-rest);
+      border-color: var(--tiao-rest-border);
+    }
+
     .cell .num {
       font-weight: 600;
       font-size: clamp(0.62rem, 0.95vw, 0.74rem);
@@ -199,6 +207,10 @@
       -webkit-line-clamp: 2;
       line-clamp: 2;
       color: #2d4a33;
+    }
+
+    .cell .tag.tiao-work-tag {
+      color: var(--tiao-work-tag);
     }
 
     .cell.today {
@@ -236,7 +248,8 @@
       color: var(--muted);
     }
 
-    .page-settings input[type="date"] {
+    .page-settings input[type="date"],
+    .page-settings input[type="number"] {
       font-family: inherit;
       font-size: 0.82rem;
       padding: 0.32rem 0.45rem;
@@ -245,6 +258,10 @@
       box-sizing: border-box;
       min-width: 7.5rem;
       max-width: 100%;
+    }
+
+    .page-settings input[type="number"] {
+      min-width: 5.5rem;
     }
 
     .page-settings .week-toolbar-label {
@@ -283,6 +300,51 @@
       background: var(--rest);
       color: #1a4d2e;
       font-weight: 600;
+    }
+
+    .info-section {
+      background: var(--card);
+      border-radius: 8px;
+      padding: 0.5rem 0.7rem;
+      margin-top: 0.5rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      font-size: 0.76rem;
+      line-height: 1.5;
+    }
+
+    .info-section h4 {
+      margin: 0 0 0.3rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .info-section .info-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.2rem 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .info-section .info-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-section .info-label {
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .info-section .info-value {
+      font-weight: 600;
+    }
+
+    .info-section .salary-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0.4rem 0;
     }
 
     /* 大屏 5×3（13 个月为 5+5+3）；较窄为 4 列再逐级减少 */
@@ -327,6 +389,10 @@
       }
 
       .page-settings {
+        display: none;
+      }
+
+      .info-section {
         display: none;
       }
 
@@ -405,7 +471,12 @@
           <div class="week-toggle" role="group" aria-label="每周固定休息">
             <button type="button" class="week-btn" id="week-sun" aria-pressed="true">周日</button>
             <button type="button" class="week-btn" id="week-sat" aria-pressed="false">周六</button>
+            <button type="button" class="week-btn" id="week-both" aria-pressed="false">双休</button>
           </div>
+        </div>
+        <div class="settings-item">
+          <label for="opt-salary">月薪（元）</label>
+          <input type="number" id="opt-salary" min="0" step="100" placeholder="选填" />
         </div>
       </div>
     </header>
@@ -415,9 +486,19 @@
         <strong>「法定」</strong>：法定节假日共 13 天/年——元旦 1 天、春节 4 天（除夕至初三）、清明 1 天、劳动节 2 天、端午 1 天、中秋 1 天、国庆 3 天；与国务院公布的连休「放假」天数不同。
       </p>
       <p id="rule-compensatory"></p>
+      <p>
+        <strong>「调休」</strong>：国务院安排的调休休息日（蓝色底），非法定节假日；如雇主也休息，通常育儿嫂也休息。<strong>「调休上班」</strong>：原为周末但需上班的日期，育儿嫂的固定休息日不受调休上班影响。
+      </p>
     </section>
 
     <div id="months" class="months"></div>
+
+    <section class="info-section" id="info-section">
+      <h4>休息日与加班费统计</h4>
+      <div id="info-stats"></div>
+      <hr class="salary-divider" />
+      <div id="info-salary"></div>
+    </section>
   </div>
 
   <script>
@@ -427,6 +508,7 @@
   var STORAGE_KEY = "hongling-weekly-rest";
   var STORAGE_NAME = "hongling-nanny-name";
   var STORAGE_CONTRACT = "hongling-contract-start";
+  var STORAGE_SALARY = "hongling-salary";
   var DEFAULT_NANNY_NAME = "李姐";
 
   function ymd(y, m, d) {
@@ -470,6 +552,7 @@
     rangeEnd = addDays(rangeStart, 364);
   }
 
+  /* ── 法定节假日 ── */
   var statutoryKeys = [
     "2026-05-01",
     "2026-05-02",
@@ -508,27 +591,89 @@
     return statutorySet.has(fmt(date));
   }
 
+  /* ── 调休上班日 ── */
+  var compensatoryWorkKeys = [
+    "2026-05-09",  // 劳动节调休上班
+    "2026-09-20",  // 国庆节调休上班
+    "2026-10-10",  // 国庆节调休上班
+    "2027-01-31",  // 春节调休上班（预估）
+    "2027-02-14",  // 春节调休上班（预估）
+  ];
+
+  var compensatoryWorkLabels = {
+    "2026-05-09": "调休上班",
+    "2026-09-20": "调休上班",
+    "2026-10-10": "调休上班",
+    "2027-01-31": "调休上班",
+    "2027-02-14": "调休上班",
+  };
+
+  var compensatoryWorkSet = new Set(compensatoryWorkKeys);
+
+  function isCompensatoryWork(date) {
+    return compensatoryWorkSet.has(fmt(date));
+  }
+
+  /* ── 调休休息日 ── */
+  var compensatoryRestKeys = [
+    "2026-05-04",  // 劳动节调休
+    "2026-05-05",  // 劳动节调休
+    "2026-10-05",  // 国庆节调休
+    "2026-10-06",  // 国庆节调休
+    "2026-10-07",  // 国庆节调休
+    "2027-02-09",  // 春节调休（预估）
+    "2027-02-10",  // 春节调休（预估）
+    "2027-02-11",  // 春节调休（预估）
+    "2027-02-12",  // 春节调休（预估）
+  ];
+
+  var compensatoryRestLabels = {
+    "2026-05-04": "劳动节（调休）",
+    "2026-05-05": "劳动节（调休）",
+    "2026-10-05": "国庆节（调休）",
+    "2026-10-06": "国庆节（调休）",
+    "2026-10-07": "国庆节（调休）",
+    "2027-02-09": "春节（调休）",
+    "2027-02-10": "春节（调休）",
+    "2027-02-11": "春节（调休）",
+    "2027-02-12": "春节（调休）",
+  };
+
+  var compensatoryRestSet = new Set(compensatoryRestKeys);
+
+  function isCompensatoryRest(date) {
+    return compensatoryRestSet.has(fmt(date));
+  }
+
+  /* ── 每周固定休息 ── */
+  // weeklyRestDay: 0=周日, 6=周六, "both"=双休
   var weeklyRestDay = 0;
 
   function loadWeeklyRestDay() {
     var s = localStorage.getItem(STORAGE_KEY);
-    if (s === "0" || s === "6") {
-      return parseInt(s, 10);
+    if (s === "0" || s === "6" || s === "both") {
+      return s === "both" ? "both" : parseInt(s, 10);
     }
     return 0;
   }
 
   function weeklyRestLabel() {
+    if (weeklyRestDay === "both") return "周六日";
     return weeklyRestDay === 0 ? "周日" : "周六";
   }
 
   function isWeeklyRest(date) {
-    return date.getDay() === weeklyRestDay;
+    var day = date.getDay();
+    if (weeklyRestDay === "both") {
+      return day === 0 || day === 6;
+    }
+    return day === weeklyRestDay;
   }
 
-  function compensatoryDay(overlap) {
+  /* ── 补休计算 ── */
+  function compensatoryDay(overlap, existingComp) {
     var c = addDays(overlap, 1);
-    while (isStatutory(c) || isWeeklyRest(c)) {
+    while (isStatutory(c) || isWeeklyRest(c) || isCompensatoryRest(c) || existingComp.has(fmt(c))) {
       c = addDays(c, 1);
     }
     return c;
@@ -582,7 +727,7 @@
 
     for (var d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 1)) {
       if (isStatutory(d) && isWeeklyRest(d)) {
-        var comp = compensatoryDay(d);
+        var comp = compensatoryDay(d, extraRest);
         if (comp <= rangeEnd) {
           extraRest.add(fmt(comp));
         }
@@ -590,7 +735,8 @@
     }
 
     function isRest(date) {
-      return isStatutory(date) || isWeeklyRest(date) || extraRest.has(fmt(date));
+      var key = fmt(date);
+      return isStatutory(date) || isWeeklyRest(date) || extraRest.has(key) || isCompensatoryRest(date);
     }
 
     monthsEl.innerHTML = "";
@@ -637,10 +783,19 @@
         var rest = isRest(date);
         var stat = isStatutory(date);
         var extra = extraRest.has(key);
+        var tiaoRest = isCompensatoryRest(date);
+        var tiaoWork = isCompensatoryWork(date);
 
         var cell = document.createElement("div");
         cell.className = "cell";
-        if (rest) cell.classList.add("rest");
+
+        if (stat || extra) {
+          cell.classList.add("rest");
+        } else if (tiaoRest) {
+          cell.classList.add("tiao-rest");
+        } else if (isWeeklyRest(date)) {
+          cell.classList.add("rest");
+        }
 
         if (key === todayStr) cell.classList.add("today");
 
@@ -654,7 +809,12 @@
         var bits = [];
         if (stat) bits.push(statutoryLabels[key] || "节日（法定）");
         if (extra) bits.push("补休");
-        if (!stat && !extra && isWeeklyRest(date) && rest) {
+        if (tiaoRest && !stat) bits.push(compensatoryRestLabels[key] || "调休");
+        if (tiaoWork) {
+          tag.classList.add("tiao-work-tag");
+          bits.push("调休上班");
+        }
+        if (!stat && !extra && !tiaoRest && isWeeklyRest(date) && rest) {
           bits.push(weeklyRestLabel());
         }
         tag.textContent = bits.join(" ");
@@ -672,7 +832,78 @@
     document.getElementById("rule-compensatory").innerHTML =
       "<strong>补休（向后顺延）</strong>：若某一天<strong>同时</strong>为「法定节假日当日」且「固定休息日」（您选择的「<strong>" +
       wn +
-      "</strong>」），则<strong>顺延至之后</strong>第一个既非法定节假日当日、也不是固定休息日的日期<strong>多休 1 天</strong>（格内标「补休」）。";
+      "</strong>」），则<strong>顺延至之后</strong>第一个既非法定节假日当日、也不是固定休息日、也不是调休休息日的日期<strong>多休 1 天</strong>（格内标「补休」）。";
+
+    renderInfo(extraRest);
+  }
+
+  /* ── 统计与加班费 ── */
+  function renderInfo(extraRest) {
+    var totalDays = 0;
+    var statutoryCount = 0;
+    var weeklyRestOnlyCount = 0;
+    var compensatoryCount = 0;
+    var tiaoRestOnlyCount = 0;
+    var overlapCount = 0;
+    var tiaoWorkOnRestCount = 0;
+    var totalRestCount = 0;
+
+    function isRestDay(date) {
+      var key = fmt(date);
+      return isStatutory(date) || isWeeklyRest(date) || extraRest.has(key) || isCompensatoryRest(date);
+    }
+
+    for (var d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 1)) {
+      totalDays++;
+      var key = fmt(d);
+      var stat = isStatutory(d);
+      var wRest = isWeeklyRest(d);
+      var extra = extraRest.has(key);
+      var tRest = isCompensatoryRest(d);
+      var tWork = isCompensatoryWork(d);
+      var rest = isRestDay(d);
+
+      if (stat) statutoryCount++;
+      if (stat && wRest) overlapCount++;
+      if (wRest && !stat && !tRest) weeklyRestOnlyCount++;
+      if (extra) compensatoryCount++;
+      if (tRest && !stat && !wRest) tiaoRestOnlyCount++;
+      if (tWork && wRest) tiaoWorkOnRestCount++;
+      if (rest) totalRestCount++;
+    }
+
+    var totalWorkCount = totalDays - totalRestCount;
+
+    var statsHtml =
+      '<div class="info-row"><span class="info-label">合同期间总天数：</span><span class="info-value">' + totalDays + ' 天</span></div>' +
+      '<div class="info-row"><span class="info-label">法定节假日：</span><span class="info-value">' + statutoryCount + ' 天</span></div>' +
+      '<div class="info-row"><span class="info-label">每周固定休息（不含重叠）：</span><span class="info-value">' + weeklyRestOnlyCount + ' 天</span></div>' +
+      (overlapCount > 0 ? '<div class="info-row"><span class="info-label">法定与固定休息重叠：</span><span class="info-value">' + overlapCount + ' 天</span></div>' : '') +
+      (compensatoryCount > 0 ? '<div class="info-row"><span class="info-label">重叠补休：</span><span class="info-value">' + compensatoryCount + ' 天</span></div>' : '') +
+      (tiaoRestOnlyCount > 0 ? '<div class="info-row"><span class="info-label">调休休息日（不含重叠）：</span><span class="info-value">' + tiaoRestOnlyCount + ' 天</span></div>' : '') +
+      (tiaoWorkOnRestCount > 0 ? '<div class="info-row"><span class="info-label">调休上班日落在固定休息日：</span><span class="info-value">' + tiaoWorkOnRestCount + ' 天</span></div>' : '') +
+      '<div class="info-row"><span class="info-label">总休息日：</span><span class="info-value">' + totalRestCount + ' 天</span></div>' +
+      '<div class="info-row"><span class="info-label">总工作日：</span><span class="info-value">' + totalWorkCount + ' 天</span></div>';
+
+    document.getElementById("info-stats").innerHTML = statsHtml;
+
+    /* 加班费 */
+    var salaryInput = document.getElementById("opt-salary");
+    var salary = parseFloat(salaryInput.value) || 0;
+    var dailyWage = salary > 0 ? (salary / 21.75) : 0;
+
+    var salaryHtml = '<div class="info-row"><span class="info-label">法定节假日总数：</span><span class="info-value">' + statutoryCount + ' 天</span></div>';
+
+    if (salary > 0) {
+      salaryHtml +=
+        '<div class="info-row"><span class="info-label">日工资（月薪÷21.75）：</span><span class="info-value">' + dailyWage.toFixed(2) + ' 元</span></div>' +
+        '<div class="info-row"><span class="info-label">法定节假日加班双倍工资：</span><span class="info-value">' + statutoryCount + ' × ' + dailyWage.toFixed(2) + ' × 2 = ' + (statutoryCount * dailyWage * 2).toFixed(2) + ' 元</span></div>' +
+        '<div class="info-row" style="color:var(--muted);font-size:0.7rem;margin-top:0.15rem">注：劳动法规定法定节假日加班应付 300% 工资，此处按合同双倍计算</div>';
+    } else {
+      salaryHtml += '<div class="info-row" style="color:var(--muted)">请输入月薪以计算加班费</div>';
+    }
+
+    document.getElementById("info-salary").innerHTML = salaryHtml;
   }
 
   function fmtChineseDate(d) {
@@ -720,10 +951,11 @@
     var w = weeklyRestDay;
     document.getElementById("week-sun").setAttribute("aria-pressed", w === 0 ? "true" : "false");
     document.getElementById("week-sat").setAttribute("aria-pressed", w === 6 ? "true" : "false");
+    document.getElementById("week-both").setAttribute("aria-pressed", w === "both" ? "true" : "false");
   }
 
   function setWeeklyRest(w) {
-    if (w !== 0 && w !== 6) {
+    if (w !== 0 && w !== 6 && w !== "both") {
       w = 0;
     }
     weeklyRestDay = w;
@@ -732,11 +964,20 @@
     render();
   }
 
+  function syncSalaryInput() {
+    var stored = localStorage.getItem(STORAGE_SALARY);
+    var input = document.getElementById("opt-salary");
+    if (stored && !isNaN(parseFloat(stored))) {
+      input.value = stored;
+    }
+  }
+
   setRangeFromContract(loadContractDate());
   weeklyRestDay = loadWeeklyRestDay();
 
   syncContractInput();
   syncWeekToggle();
+  syncSalaryInput();
 
   var nameEl = document.getElementById("editable-name");
 
@@ -797,6 +1038,20 @@
 
   document.getElementById("week-sat").addEventListener("click", function () {
     setWeeklyRest(6);
+  });
+
+  document.getElementById("week-both").addEventListener("click", function () {
+    setWeeklyRest("both");
+  });
+
+  document.getElementById("opt-salary").addEventListener("input", function () {
+    var v = this.value;
+    if (v && !isNaN(parseFloat(v)) && parseFloat(v) >= 0) {
+      localStorage.setItem(STORAGE_SALARY, v);
+    } else {
+      localStorage.removeItem(STORAGE_SALARY);
+    }
+    render();
   });
 
   applyHeader();
